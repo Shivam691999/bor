@@ -644,14 +644,14 @@ func (s *Service) reportBlock(conn *connWrapper, block *types.Block) error {
 func (s *Service) reportReorg(conn *connWrapper, reorgEvent *core.ReorgEvent) error {
 
 	//Assembling Block Stats of the Array Constituents
-	OldChainBlockStats := make([]*blockStats, len(reorgEvent.OldChain))
+	var OldChainBlockStats []*blockStats
 	for i := range reorgEvent.OldChain {
 		// Gather the block details from the header or block chain
 		details := s.assembleBlockStats(reorgEvent.OldChain[i])
 		OldChainBlockStats = append(OldChainBlockStats, details)
 	}
 
-	NewChainBlockStats := make([]*blockStats, len(reorgEvent.NewChain))
+	var NewChainBlockStats []*blockStats
 	for i := range reorgEvent.NewChain {
 		// Gather the block details from the header or block chain
 		details := s.assembleBlockStats(reorgEvent.NewChain[i])
