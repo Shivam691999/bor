@@ -645,24 +645,27 @@ func (s *Service) reportReorg(conn *connWrapper, reorgEvent *core.ReorgEvent) er
 
 	//Assembling Block Stats of the Array Constituents
 	var OldChainBlockStats []*blockStats
-	for _, block := range reorgEvent.OldChain {
-		// Gather the block details from the header or block chain
-		details := s.assembleBlockStats(block)
-		OldChainBlockStats = append(OldChainBlockStats, details)
-	}
-
 	var NewChainBlockStats []*blockStats
-	for _, block := range reorgEvent.NewChain {
+
+	if reorgEvent != nil {
+		for _, block := range reorgEvent.OldChain {
+			// Gather the block details from the header or block chain
+			details := s.assembleBlockStats(block)
+			OldChainBlockStats = append(OldChainBlockStats, details)
+		}
+
+		for _, block := range reorgEvent.NewChain {
+			// Gather the block details from the header or block chain
+			details := s.assembleBlockStats(block)
+			NewChainBlockStats = append(NewChainBlockStats, details)
+		}
+
 		// Gather the block details from the header or block chain
-		details := s.assembleBlockStats(block)
-		NewChainBlockStats = append(NewChainBlockStats, details)
+		details := s.assembleBlockStats(reorgEvent.NewChain[0])
+
+		// Assemble the block report and send it to the server
+		log.Trace("Reorg Detected", "reorg root block number", details.Number, "block hash", details.Hash)
 	}
-
-	// Gather the block details from the header or block chain
-	details := s.assembleBlockStats(reorgEvent.NewChain[0])
-
-	// Assemble the block report and send it to the server
-	log.Trace("Reorg Detected", "reorg root block number", details.Number, "block hash", details.Hash)
 
 	reorgStats := map[string]interface{}{
 		"oldChain": OldChainBlockStats,
