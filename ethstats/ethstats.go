@@ -645,16 +645,16 @@ func (s *Service) reportReorg(conn *connWrapper, reorgEvent *core.ReorgEvent) er
 
 	//Assembling Block Stats of the Array Constituents
 	var OldChainBlockStats []*blockStats
-	for i := range reorgEvent.OldChain {
+	for _, block := range reorgEvent.OldChain {
 		// Gather the block details from the header or block chain
-		details := s.assembleBlockStats(reorgEvent.OldChain[i])
+		details := s.assembleBlockStats(block)
 		OldChainBlockStats = append(OldChainBlockStats, details)
 	}
 
 	var NewChainBlockStats []*blockStats
-	for i := range reorgEvent.NewChain {
+	for _, block := range reorgEvent.NewChain {
 		// Gather the block details from the header or block chain
-		details := s.assembleBlockStats(reorgEvent.NewChain[i])
+		details := s.assembleBlockStats(block)
 		NewChainBlockStats = append(NewChainBlockStats, details)
 	}
 
