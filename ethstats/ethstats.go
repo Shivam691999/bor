@@ -642,23 +642,31 @@ func (s *Service) reportBlock(conn *connWrapper, block *types.Block) error {
 
 // reportReorg checks for reorg and sends current head to stats server.
 func (s *Service) reportReorg(conn *connWrapper, reorgEvent *core.ReorgEvent) error {
+
+	//Assembling Block Stats of the Array Constituents
+	OldChainBlockStats := make([]*blockStats, len(reorgEvent.OldChain))
+	for i := range reorgEvent.OldChain {
+		// Gather the block details from the header or block chain
+		details := s.assembleBlockStats(reorgEvent.OldChain[i])
+		OldChainBlockStats = append(OldChainBlockStats, details)
+	}
+
+	NewChainBlockStats := make([]*blockStats, len(reorgEvent.NewChain))
+	for i := range reorgEvent.NewChain {
+		// Gather the block details from the header or block chain
+		details := s.assembleBlockStats(reorgEvent.NewChain[i])
+		NewChainBlockStats = append(NewChainBlockStats, details)
+	}
+
 	// Gather the block details from the header or block chain
-	details := s.assembleBlockStats(reorgEvent.Block)
+	details := s.assembleBlockStats(reorgEvent.NewChain[0])
 
 	// Assemble the block report and send it to the server
 	log.Trace("Reorg Detected", "reorg root block number", details.Number, "block hash", details.Hash)
 
 	reorgStats := map[string]interface{}{
-		"id":                      s.node,
-		"block":                   details,
-		"dropLength":              reorgEvent.DropLength,
-		"dropForm":                reorgEvent.DropFrom,
-		"addLength":               reorgEvent.AddLength,
-		"addFrom":                 reorgEvent.AddFrom,
-		"forkBlockMiner":          reorgEvent.ForkBlockMiner,
-		"canonicalBlockMiner":     reorgEvent.CanonicalBlockMiner,
-		"oldChainTotalDifficulty": reorgEvent.OldChainTotalDifficulty,
-		"newChainTotalDifficulty": reorgEvent.NewChainTotalDifficulty,
+		"oldChain": OldChainBlockStats,
+		"newChain": NewChainBlockStats,
 	}
 
 	stats := map[string]interface{}{
