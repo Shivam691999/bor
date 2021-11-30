@@ -17,6 +17,8 @@
 package core
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -43,5 +45,13 @@ type ChainSideEvent struct {
 type ChainHeadEvent struct{ Block *types.Block }
 
 type ReorgEvent struct {
-	Block *types.Block
+	Block                   *types.Block
+	DropLength              int
+	DropFrom                common.Hash
+	AddLength               int
+	AddFrom                 common.Hash
+	ForkBlockMiner          common.Address
+	CanonicalBlockMiner     common.Address
+	OldChainTotalDifficulty *big.Int
+	NewChainTotalDifficulty *big.Int
 }

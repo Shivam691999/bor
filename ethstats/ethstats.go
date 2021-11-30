@@ -227,7 +227,7 @@ func (s *Service) loop(chainHeadCh chan core.ChainHeadEvent, reorgEventCh chan c
 	var (
 		quitCh  = make(chan struct{})
 		headCh  = make(chan *types.Block, 1)
-		reorgCh = make(chan *types.Block, 1)
+		reorgCh = make(chan *core.ReorgEvent, 1)
 		txCh    = make(chan struct{}, 1)
 	)
 	go func() {
@@ -246,7 +246,7 @@ func (s *Service) loop(chainHeadCh chan core.ChainHeadEvent, reorgEventCh chan c
 			// Notify of Reorg Events
 			case reorg := <-reorgEventCh:
 				select {
-				case reorgCh <- reorg.Block:
+				case reorgCh <- &reorg:
 				default:
 				}
 
@@ -641,18 +641,29 @@ func (s *Service) reportBlock(conn *connWrapper, block *types.Block) error {
 }
 
 // reportReorg checks for reorg and sends current head to stats server.
-func (s *Service) reportReorg(conn *connWrapper, block *types.Block) error {
+func (s *Service) reportReorg(conn *connWrapper, reorgEvent *core.ReorgEvent) error {
 	// Gather the block details from the header or block chain
-	details := s.assembleBlockStats(block)
+	details := s.assembleBlockStats(reorgEvent.Block)
 
 	// Assemble the block report and send it to the server
 	log.Trace("Reorg Detected", "reorg root block number", details.Number, "block hash", details.Hash)
 
-	stats := map[string]interface{}{
+	reorgStats := map[string]interface{}{
 		"id":                      s.node,
-		"reorg root block number": details.Number,
-		"reorg root block hash":   details.Hash,
 		"block":                   details,
+		"dropLength":              reorgEvent.DropLength,
+		"dropForm":                reorgEvent.DropFrom,
+		"addLength":               reorgEvent.AddLength,
+		"addFrom":                 reorgEvent.AddFrom,
+		"forkBlockMiner":          reorgEvent.ForkBlockMiner,
+		"canonicalBlockMiner":     reorgEvent.CanonicalBlockMiner,
+		"oldChainTotalDifficulty": reorgEvent.OldChainTotalDifficulty,
+		"newChainTotalDifficulty": reorgEvent.NewChainTotalDifficulty,
+	}
+
+	stats := map[string]interface{}{
+		"id":    s.node,
+		"stats": reorgStats,
 	}
 	report := map[string][]interface{}{
 		"emit": {"REORG DETECTED", stats},

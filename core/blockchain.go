@@ -2260,7 +2260,19 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 	// Ensure the user sees large reorgs
 	if len(oldChain) > 0 && len(newChain) > 0 {
 
-		bc.reorgFeed.Send(ReorgEvent{Block: commonBlock})
+		oldChainTd := bc.GetTd(oldChain[len(oldChain)-1].Hash(), oldChain[len(oldChain)-1].NumberU64())
+		newChainTd := bc.GetTd(newChain[len(newChain)-1].Hash(), newChain[len(newChain)-1].NumberU64())
+
+		bc.reorgFeed.Send(ReorgEvent{Block: commonBlock,
+			DropLength:              len(oldChain),
+			DropFrom:                oldChain[0].Hash(),
+			AddLength:               len(newChain),
+			AddFrom:                 newChain[0].Hash(),
+			CanonicalBlockMiner:     newChain[0].Coinbase(),
+			ForkBlockMiner:          oldChain[0].Coinbase(),
+			OldChainTotalDifficulty: oldChainTd,
+			NewChainTotalDifficulty: newChainTd,
+		})
 
 		logFn := log.Info
 		msg := "Chain reorg detected"
